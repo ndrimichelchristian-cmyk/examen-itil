@@ -1,0 +1,125 @@
+<script>
+
+let examenTermine = false;
+let dureeInitiale = 60 * 60; // 60 minutes
+let duree = dureeInitiale;
+let interval;
+
+// ================= TIMER =================
+function demarrerTimer() {
+
+    interval = setInterval(() => {
+
+        if (examenTermine) return;
+
+        let minutes = Math.floor(duree / 60);
+        let secondes = duree % 60;
+
+let seuil = 26; // minimum pour réussir
+let statut = score >= seuil ? "✅ RÉUSSI" : "❌ ÉCHEC";
+let pourcentage = Math.round((score / questions.length) * 100);
+
+document.getElementById("result").innerText =
+    `Score : ${score} / ${questions.length} (${pourcentage}%) — ${statut}`;
+
+
+        duree--;
+
+        if (duree < 0) {
+            clearInterval(interval);
+            document.getElementById("timer").innerText = "Temps écoulé !";
+            corriger(); // Auto-soumission
+        }
+
+    }, 1000);
+}
+
+// ================= CHARGER EXAMEN =================
+function chargerQuiz() {
+
+    const quiz = document.getElementById("quiz");
+    quiz.innerHTML = "";
+    document.getElementById("result").innerText = "";
+
+    examenTermine = false;
+    duree = dureeInitiale;
+
+    questions.forEach((q, index) => {
+
+        const questionDiv = document.createElement("div");
+        questionDiv.classList.add("question");
+
+        questionDiv.innerHTML = `<h3>${index + 1}. ${q.question}</h3>`;
+
+        const answersDiv = document.createElement("div");
+        answersDiv.classList.add("answers");
+
+        q.answers.forEach((answer, i) => {
+            answersDiv.innerHTML += `
+                <label id="q${index}a${i}">
+                    <input type="radio" name="question${index}" value="${i}">
+                    ${answer}
+                </label>
+            `;
+        });
+
+        const explanationDiv = document.createElement("div");
+        explanationDiv.classList.add("explanation");
+        explanationDiv.id = `exp${index}`;
+        explanationDiv.innerText = q.explanation;
+
+        questionDiv.appendChild(answersDiv);
+        questionDiv.appendChild(explanationDiv);
+
+        quiz.appendChild(questionDiv);
+    });
+
+    demarrerTimer();
+}
+
+// ================= CORRECTION =================
+function corriger() {
+
+    if (examenTermine) return;
+    examenTermine = true;
+    clearInterval(interval);
+
+    let score = 0;
+
+    questions.forEach((q, index) => {
+
+        const selected = document.querySelector(`input[name="question${index}"]:checked`);
+
+        q.answers.forEach((_, i) => {
+            const label = document.getElementById(`q${index}a${i}`);
+            if (i === q.correct) label.classList.add("correct");
+        });
+
+        if (selected) {
+            if (parseInt(selected.value) === q.correct) {
+                score++;
+            } else {
+                document.getElementById(`q${index}a${selected.value}`).classList.add("incorrect");
+            }
+        }
+
+        document.getElementById(`exp${index}`).style.display = "block";
+    });
+
+    document.getElementById("result").innerText =
+        `Résultat final : ${score} / ${questions.length}`;
+
+    // Bloquer réponses
+    document.querySelectorAll("input[type=radio]").forEach(el => el.disabled = true);
+}
+
+// ================= RECOMMENCER =================
+function recommencer() {
+    clearInterval(interval);
+    chargerQuiz();
+}
+
+chargerQuiz();
+
+</script>
+
